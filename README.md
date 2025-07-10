@@ -7,13 +7,13 @@ Backup and restore PostgreSQL to/from S3 (supports periodic backups and encrypti
 ### Backup
 
 ```sh
-$ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET=my-bucket -e S3_PREFIX=backup -e POSTGRES_DATABASE=dbname -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_HOST=localhost itbm/postgres-backup-s3
+$ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET=my-bucket -e S3_PREFIX=backup -e POSTGRES_DATABASE=dbname -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_RESTORE_HOST=localhost -e POSTGRES_BACKUP_HOST=localhost itbm/postgres-backup-s3
 ```
 
 ### Restore
 
 ```sh
-$ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET=my-bucket -e BACKUP_FILE=backup/dbname_0000-00-00T00:00:00Z.sql.gz -e POSTGRES_DATABASE=dbname -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_HOST=localhost -e CREATE_DATABASE=yes itbm/postgres-backup-s3
+$ docker run -e S3_ACCESS_KEY_ID=key -e S3_SECRET_ACCESS_KEY=secret -e S3_BUCKET=my-bucket -e BACKUP_FILE=backup/dbname_0000-00-00T00:00:00Z.sql.gz -e POSTGRES_DATABASE=dbname -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_RESTORE_HOST=localhost -e POSTGRES_BACKUP_HOST=localhost -e CREATE_DATABASE=yes itbm/postgres-backup-s3
 ```
 
 Note: When `BACKUP_FILE` is provided, the container automatically runs the restore process instead of backup.
@@ -50,7 +50,9 @@ spec:
         env:
         - name: POSTGRES_DATABASE
           value: ""
-        - name: POSTGRES_HOST
+        - name: POSTGRES_RESTORE_HOST
+          value: ""
+        - name: POSTGRES_BACKUP_HOST
           value: ""
         - name: POSTGRES_PORT
           value: ""
