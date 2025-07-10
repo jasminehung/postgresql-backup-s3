@@ -41,12 +41,12 @@ if [ "${POSTGRES_DATABASE}" = "**None**" ]; then
   exit 1
 fi
 
-if [ "${POSTGRES_HOST}" = "**None**" ]; then
+if [ "${POSTGRES_RESTORE_HOST}" = "**None**" ]; then
   if [ -n "${POSTGRES_PORT_5432_TCP_ADDR}" ]; then
-    POSTGRES_HOST=$POSTGRES_PORT_5432_TCP_ADDR
+    POSTGRES_RESTORE_HOST=$POSTGRES_PORT_5432_TCP_ADDR
     POSTGRES_PORT=$POSTGRES_PORT_5432_TCP_PORT
   else
-    echo "You need to set the POSTGRES_HOST environment variable."
+    echo "You need to set the POSTGRES_RESTORE_HOST environment variable."
     exit 1
   fi
 fi
@@ -78,7 +78,7 @@ export AWS_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
 export AWS_DEFAULT_REGION=$S3_REGION
 
 export PGPASSWORD=$POSTGRES_PASSWORD
-POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
+POSTGRES_RESTORE_HOST_OPTS="-h $POSTGRES_RESTORE_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
 
 LOCAL_FILE=$(basename $BACKUP_FILE)
 DOWNLOAD_PATH="/tmp/$LOCAL_FILE"
@@ -102,7 +102,7 @@ if [[ "$LOCAL_FILE" == *.enc ]]; then
   DOWNLOAD_PATH=$DECRYPTED_PATH
 fi
 
-echo "Restoring database ${POSTGRES_DATABASE} on ${POSTGRES_HOST}"
+echo "Restoring database ${POSTGRES_DATABASE} on ${POSTGRES_RESTORE_HOST}"
 
 if [ "${DROP_DATABASE}" = "yes" ]; then
   if [ "${POSTGRES_DATABASE}" == "all" ]; then
@@ -110,7 +110,7 @@ if [ "${DROP_DATABASE}" = "yes" ]; then
     exit 1
   fi
   echo "Dropping database ${POSTGRES_DATABASE}"
-  if ! psql $POSTGRES_HOST_OPTS -d postgres -c "DROP DATABASE IF EXISTS ${POSTGRES_DATABASE} WITH (FORCE);" > /dev/null 2>&1; then
+  if ! psql $POSTGRES_RESTORE_HOST_OPTS -d postgres -c "DROP DATABASE IF EXISTS ${POSTGRES_DATABASE} WITH (FORCE);" > /dev/null 2>&1; then
     echo "WARNING: Failed to drop database ${POSTGRES_DATABASE}. It might not exist."
   fi
 fi
@@ -121,7 +121,7 @@ if [ "${CREATE_DATABASE}" = "yes" ]; then
     exit 1
   fi
   echo "Creating database ${POSTGRES_DATABASE}"
-  if ! psql $POSTGRES_HOST_OPTS -d postgres -c "CREATE DATABASE ${POSTGRES_DATABASE};" > /dev/null 2>&1; then
+  if ! psql $POSTGRES_RESTORE_HOST_OPTS -d postgres -c "CREATE DATABASE ${POSTGRES_DATABASE};" > /dev/null 2>&1; then
     echo "WARNING: Failed to create database ${POSTGRES_DATABASE}. It might already exist."
   fi
 fi
@@ -129,10 +129,10 @@ fi
 if [[ "$DOWNLOAD_PATH" == *.sql.gz ]]; then
   if [ "${POSTGRES_DATABASE}" == "all" ]; then
     echo "Restoring all databases"
-    $DECOMPRESSION_CMD $DOWNLOAD_PATH | psql $POSTGRES_HOST_OPTS -d postgres
+    $DECOMPRESSION_CMD $DOWNLOAD_PATH | psql $POSTGRES_RESTORE_HOST_OPTS -d postgres
   else
     echo "Restoring database ${POSTGRES_DATABASE}"
-    $DECOMPRESSION_CMD $DOWNLOAD_PATH | psql $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE
+    $DECOMPRESSION_CMD $DOWNLOAD_PATH | psql $POSTGRES_RESTORE_HOST_OPTS -d $POSTGRES_DATABASE
   fi
 elif [[ "$DOWNLOAD_PATH" == *.dump ]]; then
   if [ "${POSTGRES_DATABASE}" == "all" ]; then
@@ -142,9 +142,9 @@ elif [[ "$DOWNLOAD_PATH" == *.dump ]]; then
     echo "Restoring database ${POSTGRES_DATABASE} from custom format"
     if [ "$PARALLEL_JOBS" -gt 1 ]; then
       echo "Using parallel restore with $PARALLEL_JOBS jobs"
-      pg_restore -j $PARALLEL_JOBS $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE $DOWNLOAD_PATH
+      pg_restore -j $PARALLEL_JOBS $POSTGRES_RESTORE_HOST_OPTS -d $POSTGRES_DATABASE $DOWNLOAD_PATH
     else
-      pg_restore $POSTGRES_HOST_OPTS -d $POSTGRES_DATABASE $DOWNLOAD_PATH
+      pg_restore $POSTGRES_RESTORE_HOST_OPTS -d $POSTGRES_DATABASE $DOWNLOAD_PATH
     fi
   fi
 else
