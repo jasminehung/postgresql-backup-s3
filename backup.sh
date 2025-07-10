@@ -25,12 +25,12 @@ if [ "${POSTGRES_DATABASE}" = "**None**" ]; then
   exit 1
 fi
 
-if [ "${POSTGRES_HOST}" = "**None**" ]; then
+if [ "${POSTGRES_BACKUP_HOST}" = "**None**" ]; then
   if [ -n "${POSTGRES_PORT_5432_TCP_ADDR}" ]; then
-    POSTGRES_HOST=$POSTGRES_PORT_5432_TCP_ADDR
+    POSTGRES_BACKUP_HOST=$POSTGRES_PORT_5432_TCP_ADDR
     POSTGRES_PORT=$POSTGRES_PORT_5432_TCP_PORT
   else
-    echo "You need to set the POSTGRES_HOST environment variable."
+    echo "You need to set the POSTGRES_BACKUP_HOST environment variable."
     exit 1
   fi
 fi
@@ -56,9 +56,9 @@ export AWS_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
 export AWS_DEFAULT_REGION=$S3_REGION
 
 export PGPASSWORD=$POSTGRES_PASSWORD
-POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
+POSTGRES_BACKUP_HOST_OPTS="-h $POSTGRES_BACKUP_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
 
-echo "Creating dump of ${POSTGRES_DATABASE} database from ${POSTGRES_HOST}..."
+echo "Creating dump of ${POSTGRES_DATABASE} database from ${POSTGRES_BACKUP_HOST}..."
 
 if [ "$USE_CUSTOM_FORMAT" = "yes" ]; then
   SRC_FILE=dump.dump
@@ -73,9 +73,9 @@ else
   SRC_FILE=dump.sql.gz
   DEST_FILE=${POSTGRES_DATABASE}_$(date +"%Y-%m-%dT%H:%M:%SZ").sql.gz
   if [ "${POSTGRES_DATABASE}" == "all" ]; then
-    pg_dumpall $POSTGRES_HOST_OPTS | $COMPRESSION_CMD > $SRC_FILE
+    pg_dumpall $POSTGRES_BACKUP_HOST_OPTS | $COMPRESSION_CMD > $SRC_FILE
   else
-    pg_dump $POSTGRES_HOST_OPTS $POSTGRES_DATABASE | $COMPRESSION_CMD > $SRC_FILE
+    pg_dump $POSTGRES_BACKUP_HOST_OPTS $POSTGRES_DATABASE | $COMPRESSION_CMD > $SRC_FILE
   fi
 fi
 
